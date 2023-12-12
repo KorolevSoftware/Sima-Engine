@@ -1,0 +1,3 @@
+[submodule "dependency/vecmath"]
+	path = dependency/vecmath
+	url = https://github.com/GaijinEntertainment/vecmath
