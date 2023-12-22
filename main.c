@@ -23,8 +23,8 @@ const char* game_script =
 "variable posX "
 "variable posY "
 
-"0 posX ! "
-"0 posY ! "
+"360 posX ! "
+"720 posY ! "
 
 ": input "
     "dup down = if posY @ 1  - posY ! then "
@@ -32,15 +32,40 @@ const char* game_script =
     "dup left = if posX @ 1 - posX ! then "
     "dup right = if posX @ 1 + posX ! then "
     "99 posY @ posX @ set_poition "
+    //"50 180 360 set_poition"
     "drop "
 " ; ";
 
 struct GameObject* gm;
 static struct mat4 project;
 
+const float display_width = 360;
+const float display_height = 720;
+const float zoom = 1;
+const float dpi_ratio = 1;
+const float near_z = 0.1;
+const float far_z = 100;
+
+static void fixed_zoom(int windows_width, int windows_height) {
+    int projected_width = windows_width / (zoom / dpi_ratio);
+    int projected_height = windows_height / (zoom / dpi_ratio);
+    int xoffset = -(projected_width - display_width) / 2;
+    int yoffset = -(projected_height - display_height) / 2;
+    mat4_orthoLH(&project, xoffset, xoffset + projected_width, yoffset, yoffset + projected_height, near_z, far_z);
+}
+
+static void fixed_auto(int windows_width, int windows_height) {
+    float zoom_factor = min(windows_width / display_width, windows_height / display_height) * zoom * dpi_ratio;
+    float projected_width = windows_width / (zoom_factor / dpi_ratio);
+    float projected_height = windows_height / (zoom_factor / dpi_ratio);
+    float xoffset = -(projected_width - display_width) / 2;
+    float yoffset = -(projected_height - display_height) / 2;
+    mat4_orthoLH(&project, xoffset, xoffset + projected_width, yoffset, yoffset + projected_height, near_z, far_z);
+}
+
 static void init(void) {
     ARender->Create();
-    mat4_orthoLH(&project, 0.0f, 40.0f, 0.0f, 30.0f, 0.1f, 100.0f);
+    fixed_auto(640, 480);
     const char* path = "e:\\Project\\Defold\\defold-games-master\\Galaxy Force\\assets\\png\\boss2.png";
     int sprite_width, sprite_height, sprite_depth;
     uint8_t* bitmapData = stbi_load(path, &sprite_width, &sprite_height, &sprite_depth, 0);
@@ -74,7 +99,13 @@ void frame(void) {
 }
 
 void eventa(const sapp_event* ev) {
-    if (ev->key_code == SAPP_KEYCODE_INVALID || ev->type !=  SAPP_EVENTTYPE_KEY_DOWN) {
+
+    if (ev->type == SAPP_EVENTTYPE_RESIZED) {
+        fixed_auto(ev->window_width, ev->window_height);
+        int g = 10;
+    }
+
+    if (ev->key_code == SAPP_KEYCODE_INVALID) {
         return;
     }
     AGameObject->Input(gm, ev->key_code);

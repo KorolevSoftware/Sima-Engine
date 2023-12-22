@@ -14,10 +14,10 @@ static struct Sprite* Create(const unsigned char* texture_data, size_t width, si
     struct Sprite* self = malloc(sizeof(struct Sprite));
     float vertex_data[] = {
         // positions            // colors
-        -1.0f,  1.0f, 0.0f,   0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f,     1.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f,   0.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,    1.0f, 0.0f,
+        -10.0f,  10.0f, 0.0f,   0.0f, 1.0f,
+        10.0f, 10.0f, 0.0f,     1.0f, 1.0f,
+        -10.0f, -10.0f, 0.0f,   0.0f, 0.0f,
+        10.0f, -10.0f, 0.0f,    1.0f, 0.0f,
     };
     self->mesh = AMesh->Create(4, vertex_data, sizeof(vertex_data));
     self->texture = ATexture->Create(texture_data, width, height, depth);
