@@ -1,30 +1,41 @@
 #include "mesh.h"
 #include <stdlib.h>
-#include <string.h>
+#include "sokol_gfx.h"
 
-struct mesh {
-	sg_bindings bind;
-    sg_pipeline pipeline;
+// Mesh public methods
+
+struct Mesh {
+    sg_buffer gpu_buffer;
+    size_t vertex_count;
 };
 
-struct mesh* create_mesh(sg_pipeline pipeline, const float* vertices, int size) {
-	struct mesh* new_mesh = malloc(sizeof(struct mesh));
-    memset(new_mesh, 0, sizeof(struct mesh));
-    new_mesh->pipeline = pipeline;
-
-	new_mesh->bind.vertex_buffers[0] = sg_make_buffer(&(sg_buffer_desc) {
-        .data = (sg_range){ vertices, size },
+static struct Mesh* Create(int count, const float* vertices, int vertex_size) {
+	struct Mesh* self = malloc(sizeof(struct Mesh));
+    self->vertex_count = count;
+    self->gpu_buffer = sg_make_buffer(&(sg_buffer_desc) {
+        .data = (sg_range){ .ptr = vertices, .size = vertex_size },
         .label = "mesh"
     });
-    return new_mesh;
+    return self;
 }
 
-void releace_mesh(struct mesh* from_release) {
-    //sg_destroy_buffer() -- todo destroy
+static void Releace(struct Mesh* self) {
+    sg_destroy_buffer(self->gpu_buffer);
+    free(self);
 }
 
-void draw_mesh(struct mesh* mesh) {
-    sg_apply_pipeline(mesh->pipeline);
-    sg_apply_bindings(&mesh->bind);
-    sg_draw(0, 3, 1);
+void Bind(struct Mesh* self, void* binder) {
+    sg_bindings* bind = (sg_bindings*)binder;
+    bind->vertex_buffers[0] = self->gpu_buffer;
 }
+
+static void Draw(struct Mesh* self) {
+    sg_draw(0, self->vertex_count, 1);
+}
+
+struct AMesh AMesh[1] = {
+    Create,
+    Bind,
+    Releace,
+    Draw,
+};

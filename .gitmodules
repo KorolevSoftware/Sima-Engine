@@ -1,3 +1,10 @@
-[submodule "dependency/vecmath"]
-	path = dependency/vecmath
-	url = https://github.com/GaijinEntertainment/vecmath
+[submodule "dependency/sokol"]
+	path = dependency/sokol
+	url = https://github.com/floooh/sokol.git
+        branch = d4ac122f36d7659a18b312fd4fa2317fb9e06a63
+[submodule "dependency/Forth-embed"]
+	path = dependency/Forth-embed
+	url = https://github.com/KorolevSoftware/Forth-embed
+[submodule "dependency/cmath"]
+	path = dependency/cmath
+	url = https://github.com/felselva/mathc.git

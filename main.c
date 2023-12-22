@@ -2,100 +2,95 @@
 //  triangle-sapp.c
 //  Simple 2D rendering from vertex buffer.
 //------------------------------------------------------------------------------
-#include "mesh.h"
 
-#define SOKOL_D3D11
-#define SOKOL_IMPL
+#include <stdbool.h>
+#include "render.h"
 #include "sokol_app.h"
-#include "sokol_gfx.h"
 #include "sokol_log.h"
-#include "sokol_glue.h"
-#include "shaders/triangle-sapp.glsl.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <game_object.h>
+#include "../dependency/cmath/mathc.h"
+#define STB_IMAGE_IMPLEMENTATION  
+#include "STDImage.h"
 
-//#include "SDL2/SDL.h"
+const char* game_script =
+"264 constant down "
+"265 constant up "
+"263 constant left "
+"262 constant right "
 
-// application state
-static struct {
-    sg_pass_action pass_action;
-    struct mesh* mesh;
-} state;
+"variable posX "
+"variable posY "
+
+"0 posX ! "
+"0 posY ! "
+
+": input "
+    "dup down = if posY @ 1  - posY ! then "
+    "dup up = if posY @ 1 + posY ! then "
+    "dup left = if posX @ 1 - posX ! then "
+    "dup right = if posX @ 1 + posX ! then "
+    "99 posY @ posX @ set_poition "
+    "drop "
+" ; ";
+
+struct GameObject* gm;
+static struct mat4 project;
 
 static void init(void) {
-    sg_setup(&(sg_desc) {
-        .context = sapp_sgcontext(),
-        .logger.func = slog_func,
-    });
-
-    // a vertex buffer with 3 vertices
-    float vertices[] = {
-        // positions            // colors
-         0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f
-    };
-
-    // create shader from code-generated sg_shader_desc
-    sg_shader shd = sg_make_shader(triangle_shader_desc(sg_query_backend()));
-    
-    // create a pipeline object (default render states are fine for triangle)
-    sg_pipeline pip = sg_make_pipeline(&(sg_pipeline_desc) {
-        .shader = shd,
-            // if the vertex layout doesn't have gaps, don't need to provide strides and offsets
-        .layout = {
-            .attrs = {
-                        [ATTR_vs_position].format = SG_VERTEXFORMAT_FLOAT3,
-                        [ATTR_vs_color0].format = SG_VERTEXFORMAT_FLOAT4
-                     }
-        },
-        .label = "triangle-pipeline"
-    });
-    state.mesh = create_mesh(pip, vertices, sizeof(vertices));
-    // a pass action to clear framebuffer to black
-    state.pass_action = (sg_pass_action) {
-        .colors[0] = {.load_action = SG_LOADACTION_CLEAR, .clear_value = {0.0f, 0.0f, 0.0f, 1.0f } }
-    };
-}
-
-void frame(void) {
-    //sg_begin_pass();
-    sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
-    draw_mesh(state.mesh);
-    //__dbgui_draw();
-    sg_end_pass();
-    sg_commit();
+    ARender->Create();
+    mat4_orthoLH(&project, 0.0f, 40.0f, 0.0f, 30.0f, 0.1f, 100.0f);
+    const char* path = "e:\\Project\\Defold\\defold-games-master\\Galaxy Force\\assets\\png\\boss2.png";
+    int sprite_width, sprite_height, sprite_depth;
+    uint8_t* bitmapData = stbi_load(path, &sprite_width, &sprite_height, &sprite_depth, 0);
+    gm = AGameObject->Create(game_script, bitmapData, sprite_width, sprite_height, sprite_depth);
+    free(bitmapData);
 }
 
 void cleanup(void) {
-    //__dbgui_shutdown();
-    sg_shutdown();
+    AGameObject->Releace(gm);
+    ARender->Release();
 }
 
+void render(int width, int height) { 
+    AGameObject->Bind(gm, ARender->GetBinder());
+    ARender->Begin(width, height);  // BEGIN DRAW
 
-//int main(int argc, char* argv[]) {
-//    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-//        //std::cerr << "Failed to init SDL: " << SDL_GetError() << "\n";
-//        return -1;
-//    }
-//    SDL_Window* window = SDL_CreateWindow("SDL2 + DX12",
-//        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480,
-//        SDL_WINDOW_RESIZABLE);
-//
-//    SDL_RenderGetD3D11Device
-//    //SDL_GetRendererInfo
-//
-//}
+    struct mat4 result;
+
+    struct mat4* world = AGameObject->GetWorldMatrix(gm);
+
+    mat4_multiply(&result, &project, world);
+
+    ARender->SetMatrix4x4(&result);
+    AGameObject->Draw(gm);
+
+    ARender->End(); // END DRAW
+}
+
+void frame(void) {
+    render(sapp_width(), sapp_height());
+}
+
+void eventa(const sapp_event* ev) {
+    if (ev->key_code == SAPP_KEYCODE_INVALID || ev->type !=  SAPP_EVENTTYPE_KEY_DOWN) {
+        return;
+    }
+    AGameObject->Input(gm, ev->key_code);
+}
 
 sapp_desc sokol_main(int argc, char* argv[]) {
     (void)argc; (void)argv;
     return (sapp_desc) {
         .init_cb = init,
-            .frame_cb = frame,
-            .cleanup_cb = cleanup,
-            .event_cb = NULL,
-            .width = 640,
-            .height = 480,
-            .window_title = "Triangle (sokol-app)",
-            .icon.sokol_default = true,
-            .logger.func = slog_func,
+        .frame_cb = frame,
+        .cleanup_cb = cleanup,
+        .event_cb = eventa,
+        .width = 640,
+        .height = 480,
+        .window_title = "Sima-Engine (sokol-app)",
+        .icon.sokol_default = true,
+        .logger.func = slog_func,
     };
 }

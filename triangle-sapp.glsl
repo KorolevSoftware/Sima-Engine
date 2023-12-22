@@ -1,22 +1,30 @@
 @vs vs
-in vec4 position;
-in vec4 color0;
+uniform vs_params {
+    mat4 mvp;
+};
 
-out vec4 color;
+in vec4 position;
+in vec2 texcoord0;
+
+out vec2 uv;
 
 void main() {
-    gl_Position = position;
-    color = color0;
+    gl_Position = mvp * position;
+    uv = texcoord0;
 }
 @end
 
 @fs fs
-in vec4 color;
+uniform texture2D tex;
+uniform sampler smp;
+
+in vec2 uv;
+
 out vec4 frag_color;
 
 void main() {
-    frag_color = color;
+    frag_color = texture(sampler2D(tex, smp), uv);
 }
 @end
 
-@program triangle vs fs
+@program sprite vs fs

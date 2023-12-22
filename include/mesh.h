@@ -1,7 +1,12 @@
 #pragma once
 
-#include "sokol_gfx.h"
+struct Mesh;
 
-struct mesh* create_mesh(sg_pipeline pipeline, const float* vertices, int vertex_count);
-void releace_mesh(struct mesh* from_release);
-void draw_mesh(struct mesh* mesh);
+struct AMesh {
+    struct Mesh* (*Create) (int count, const float* vertices, int vertex_size);
+    void (*Bind)(struct Mesh* self, void* binder);
+    void (*Releace) (struct Mesh* self);
+    void (*Draw) (struct Mesh* self);
+};
+
+extern struct AMesh AMesh[1];
