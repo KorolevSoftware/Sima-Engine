@@ -22,25 +22,25 @@ const char* game_script =
 
 "variable posX "
 "variable posY "
+"variable posZ "
 
-"360 posX ! "
-"720 posY ! "
+//": init ; "
 
 ": input "
+    "get_position posX ! posY ! posZ ! "
     "dup down = if posY @ 1  - posY ! then "
     "dup up = if posY @ 1 + posY ! then "
     "dup left = if posX @ 1 - posX ! then "
     "dup right = if posX @ 1 + posX ! then "
-    "99 posY @ posX @ set_poition "
-    //"50 180 360 set_poition"
+    "posZ @ posY @ posX @ set_position "
     "drop "
 " ; ";
 
 struct GameObject* gm;
 static struct mat4 project;
 
-const float display_width = 360;
-const float display_height = 720;
+const float display_width = 800;
+const float display_height = 600;
 const float zoom = 1;
 const float dpi_ratio = 1;
 const float near_z = 0.1;
@@ -70,6 +70,7 @@ static void init(void) {
     int sprite_width, sprite_height, sprite_depth;
     uint8_t* bitmapData = stbi_load(path, &sprite_width, &sprite_height, &sprite_depth, 0);
     gm = AGameObject->Create(game_script, bitmapData, sprite_width, sprite_height, sprite_depth);
+    AGameObject->SetPosition(gm, (struct vec3) { 800, 600, 50 });
     free(bitmapData);
 }
 
@@ -102,7 +103,6 @@ void eventa(const sapp_event* ev) {
 
     if (ev->type == SAPP_EVENTTYPE_RESIZED) {
         fixed_auto(ev->window_width, ev->window_height);
-        int g = 10;
     }
 
     if (ev->key_code == SAPP_KEYCODE_INVALID) {

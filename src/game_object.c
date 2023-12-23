@@ -6,7 +6,6 @@
 #include "script.h"
 #include <string.h>
 #include "forth_embed.h"
-#include "../dependency/cmath/mathc.h"
 
 static struct mat4 world_matrix;
 
@@ -18,16 +17,30 @@ struct GameObject {
 };
 
 
-static void set_poition(struct forth_state* fs) {
+static struct vec3 get_position(struct GameObject* self) {
+    return self->position;
+}
+
+static void set_position(struct GameObject* self, struct vec3 position) {
+    self->position = position;
+}
+
+static void get_position_forth(struct forth_state* fs) {
+    struct GameObject* self = (struct GameObject*)forth_get_user_data(fs);
+    forth_data_stack_push(fs, (int)self->position.z);
+    forth_data_stack_push(fs, (int)self->position.y);
+    forth_data_stack_push(fs, (int)self->position.x);
+}
+
+static void set_position_forth(struct forth_state* fs) {
     struct GameObject* self = (struct GameObject*)forth_get_user_data(fs);
 
     float posX = forth_data_stack_pop(fs);
     float posY = forth_data_stack_pop(fs);
     float posZ = forth_data_stack_pop(fs);
 
-    vec3(&self->position, posX, posY, posZ);
+    set_position(self, (struct vec3){ posX, posY, posZ });
 }
-
 
 static struct GameObject* Create(const char* script_text, const unsigned char* texture_data, size_t width, size_t height, size_t depth) {
     struct GameObject* new_gm = malloc(sizeof(struct GameObject));
@@ -35,7 +48,9 @@ static struct GameObject* Create(const char* script_text, const unsigned char* t
 
     if (script_text) {
         new_gm->script = AScript->Create(script_text, new_gm);
-        AScript->AddFunction(new_gm->script, "set_poition", set_poition);
+        AScript->AddFunction(new_gm->script, "set_position", set_position_forth);
+        AScript->AddFunction(new_gm->script, "get_position", get_position_forth);
+        AScript->CallFunction(new_gm->script, "init");
     }
     if (texture_data) {
         new_gm->sprite = ASprite->Create(texture_data, width, height, depth);
@@ -93,4 +108,5 @@ struct AGameObject AGameObject[1] = {
     Bind,
     Draw,
     GetWorldMatrix,
+    set_position,
 };

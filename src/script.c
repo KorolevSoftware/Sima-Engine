@@ -28,7 +28,7 @@ static struct Script* Create(const char* script_text, void* user_data) {
     struct Script* script = malloc(sizeof(struct Script));
 
     script->code = forth_compile(script_text);
-    script->state = forth_make_default_state();
+    script->state = forth_make_state(50, 1000, 40, 20, 10);
 
     forth_set_user_data(script->state, user_data);
     forth_run(script->state, script->code);
